@@ -11,10 +11,10 @@ const UserSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 
-UserSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+// CORRECTION ICI : On retire "next" et on utilise async/await directement
+UserSchema.pre('save', async function () {
+  if (!this.isModified('password')) return;
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 UserSchema.methods.comparePassword = function (candidate) {
