@@ -1,0 +1,182 @@
+<section class="dashboard-page">
+  <div class="page-heading">
+    <div>
+      <div class="eyebrow">YOUR OVERVIEW</div>
+      <h1>Good to see you, <%= user.name.split(' ')[0] %></h1>
+      <p>Here’s what’s happening with your recovery portfolio today.</p>
+    </div>
+    <div class="date-pill"><i class="bi bi-calendar3"></i><%= new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %></div>
+  </div>
+
+  <% if (notice === 'payment-recorded') { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      Payment recorded and invoice balance updated.
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% } %>
+
+  <div class="row g-3 stat-grid">
+    <div class="col-12 col-md-4">
+      <article class="stat-card">
+        <div class="stat-top"><span><%= isClient ? 'Open balance' : 'Total clients' %></span><span class="stat-icon icon-blue"><i class="bi bi-<%= isClient ? 'wallet2' : 'people' %>"></i></span></div>
+        <div class="stat-value"><%= isClient ? formatCurrency(stats.debt) : stats.clients.toLocaleString() %></div>
+        <div class="stat-foot"><span class="stat-dot"></span><%= isClient ? 'Outstanding across your invoices' : (isAdmin ? 'Across the platform' : 'Assigned to your portfolio') %></div>
+      </article>
+    </div>
+    <div class="col-12 col-md-4">
+      <article class="stat-card">
+        <div class="stat-top"><span><%= isClient ? 'Your invoices' : 'Outstanding debt' %></span><span class="stat-icon icon-amber"><i class="bi bi-<%= isClient ? 'file-earmark-text' : 'graph-up-arrow' %>"></i></span></div>
+        <div class="stat-value"><%= isClient ? invoices.length : formatCurrency(stats.debt) %></div>
+        <div class="stat-foot"><span class="stat-dot dot-amber"></span><%= isClient ? 'Current and historical invoices' : 'Remaining amount to recover' %></div>
+      </article>
+    </div>
+    <div class="col-12 col-md-4">
+      <article class="stat-card">
+        <div class="stat-top"><span>Recent payments</span><span class="stat-icon icon-green"><i class="bi bi-cash-stack"></i></span></div>
+        <div class="stat-value"><%= stats.payments.toLocaleString() %></div>
+        <div class="stat-foot"><span class="stat-dot dot-green"></span><%= isAdmin ? 'Latest platform activity' : (isClient ? 'Payments on your account' : 'Payments in your portfolio') %></div>
+      </article>
+    </div>
+  </div>
+
+  <% if (user.role === 'admin' || user.role === 'manager') { %>
+    <div class="section-heading" id="clients">
+      <div><h2>All clients</h2><p>Client accounts across your portfolio</p></div>
+      <span class="section-count"><%= clients.length %> clients</span>
+    </div>
+    <div class="table-card mb-4">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead><tr><th>CLIENT</th><th>EMAIL</th><th>COMPANY</th><th>ASSIGNED AGENT</th><th>ADDED</th></tr></thead>
+          <tbody>
+            <% if (!clients.length) { %><tr><td class="empty-state" colspan="5">No client records yet.</td></tr><% } %>
+            <% clients.forEach((client) => { %>
+              <tr><td><strong><%= client.name %></strong></td><td><%= client.email || '—' %></td><td><%= client.company || '—' %></td><td><%= client.assignedAgent ? client.assignedAgent.name : 'Unassigned' %></td><td><%= client.createdAt ? new Date(client.createdAt).toLocaleDateString() : '—' %></td></tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="section-heading" id="users">
+      <div><h2>Team members</h2><p>Accounts and access roles</p></div>
+      <span class="section-count"><%= users.length %> users</span>
+    </div>
+    <div class="table-card mb-4">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead><tr><th>NAME</th><th>EMAIL</th><th>ROLE</th><th>STATUS</th></tr></thead>
+          <tbody>
+            <% if (!users.length) { %><tr><td class="empty-state" colspan="4">No user accounts yet.</td></tr><% } %>
+            <% users.forEach((member) => { %>
+              <tr><td><strong><%= member.name %></strong></td><td><%= member.email %></td><td><span class="role-badge"><%= member.role %></span></td><td><span class="status-badge <%= member.isActive ? 'status-active' : 'status-inactive' %>"><%= member.isActive ? 'Active' : 'Inactive' %></span></td></tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="section-heading" id="payments"><div><h2>Recent payments</h2><p>Latest activity across the platform</p></div></div>
+    <div class="table-card">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead><tr><th>DATE</th><th>INVOICE</th><th>CLIENT</th><th>METHOD</th><th>AMOUNT</th></tr></thead>
+          <tbody>
+            <% if (!payments.length) { %><tr><td class="empty-state" colspan="5">No payments recorded yet.</td></tr><% } %>
+            <% payments.forEach((payment) => { %>
+              <tr><td><%= new Date(payment.createdAt).toLocaleDateString() %></td><td><strong><%= payment.invoice ? payment.invoice.reference : '—' %></strong></td><td><%= payment.invoice && payment.invoice.client ? payment.invoice.client.name : '—' %></td><td class="text-capitalize"><%= payment.method %></td><td><strong><%= formatCurrency(payment.amount) %></strong></td></tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% } else if (user.role === 'client') { %>
+    <div class="section-heading" id="invoices">
+      <div><h2>Your invoices</h2><p>Review your balances and due dates</p></div>
+      <span class="section-count"><%= invoices.length %> invoices</span>
+    </div>
+    <div class="table-card mb-4">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead><tr><th>REFERENCE</th><th>AMOUNT</th><th>PAID</th><th>REMAINING</th><th>DUE DATE</th><th>STATUS</th></tr></thead>
+          <tbody>
+            <% if (!invoices.length) { %><tr><td class="empty-state" colspan="6"><%= clients.length ? 'No invoices found for your account.' : 'Your account is not linked to a client record yet. Please contact your administrator.' %></td></tr><% } %>
+            <% invoices.forEach((invoice) => { %>
+              <tr><td><strong><%= invoice.reference %></strong></td><td><%= formatCurrency(invoice.amount) %></td><td><%= formatCurrency(invoice.paid) %></td><td><strong><%= formatCurrency(Math.max(invoice.amount - invoice.paid, 0)) %></strong></td><td><%= invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '—' %></td><td><span class="status-badge status-<%= invoice.status %>"><%= invoice.status.replace('_', ' ') %></span></td></tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="section-heading" id="payments"><div><h2>Payment history</h2><p>Payments applied to your invoices</p></div></div>
+    <div class="table-card">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead><tr><th>DATE</th><th>INVOICE</th><th>METHOD</th><th>AMOUNT</th></tr></thead>
+          <tbody>
+            <% if (!payments.length) { %><tr><td class="empty-state" colspan="4">No payments recorded yet.</td></tr><% } %>
+            <% payments.forEach((payment) => { %>
+              <tr><td><%= new Date(payment.createdAt).toLocaleDateString() %></td><td><strong><%= payment.invoice ? payment.invoice.reference : '—' %></strong></td><td class="text-capitalize"><%= payment.method %></td><td><strong><%= formatCurrency(payment.amount) %></strong></td></tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% } else { %>
+    <div class="section-heading" id="clients">
+      <div><h2>My clients</h2><p>Accounts assigned to your portfolio</p></div>
+      <span class="section-count"><%= clients.length %> clients</span>
+    </div>
+    <div class="table-card mb-4">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead><tr><th>CLIENT</th><th>EMAIL</th><th>COMPANY</th><th>PHONE</th></tr></thead>
+          <tbody>
+            <% if (!clients.length) { %><tr><td class="empty-state" colspan="4">No clients have been assigned to your account yet.</td></tr><% } %>
+            <% clients.forEach((client) => { %><tr><td><strong><%= client.name %></strong></td><td><%= client.email || '—' %></td><td><%= client.company || '—' %></td><td><%= client.phone || '—' %></td></tr><% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="section-heading" id="invoices">
+      <div><h2>Portfolio invoices</h2><p>Invoices for your assigned clients</p></div>
+      <span class="section-count"><%= invoices.length %> invoices</span>
+    </div>
+    <div class="table-card mb-4">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead><tr><th>REFERENCE</th><th>CLIENT</th><th>AMOUNT</th><th>PAID</th><th>STATUS</th><th>RECORD PAYMENT</th></tr></thead>
+          <tbody>
+            <% if (!invoices.length) { %><tr><td class="empty-state" colspan="6">No invoices found for your assigned clients.</td></tr><% } %>
+            <% invoices.forEach((invoice) => { %>
+              <tr>
+                <td><strong><%= invoice.reference %></strong></td><td><%= invoice.client ? invoice.client.name : '—' %></td><td><%= formatCurrency(invoice.amount) %></td><td><%= formatCurrency(invoice.paid) %></td>
+                <td><span class="status-badge status-<%= invoice.status %>"><%= invoice.status.replace('_', ' ') %></span></td>
+                <td>
+                  <% if (invoice.amount > invoice.paid) { %>
+                    <form class="payment-form" method="post" action="/dashboard/payments">
+                      <input type="hidden" name="invoice" value="<%= invoice._id %>">
+                      <input class="form-control form-control-sm" name="amount" type="number" min="0.01" max="<%= (invoice.amount - invoice.paid).toFixed(2) %>" step="0.01" placeholder="Amount" required aria-label="Payment amount for <%= invoice.reference %>">
+                      <select class="form-select form-select-sm" name="method" aria-label="Payment method"><option value="manual">Manual</option><option value="bank">Bank</option><option value="card">Card</option></select>
+                      <button class="btn btn-sm btn-primary" type="submit" aria-label="Record payment for <%= invoice.reference %>"><i class="bi bi-plus-lg"></i></button>
+                    </form>
+                  <% } else { %><span class="text-success small fw-semibold">Paid in full</span><% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="section-heading" id="payments"><div><h2>Recent payments</h2><p>Activity across your assigned clients</p></div></div>
+    <div class="table-card">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead><tr><th>DATE</th><th>INVOICE</th><th>METHOD</th><th>AMOUNT</th></tr></thead>
+          <tbody>
+            <% if (!payments.length) { %><tr><td class="empty-state" colspan="4">No payments recorded yet.</td></tr><% } %>
+            <% payments.forEach((payment) => { %><tr><td><%= new Date(payment.createdAt).toLocaleDateString() %></td><td><strong><%= payment.invoice ? payment.invoice.reference : '—' %></strong></td><td class="text-capitalize"><%= payment.method %></td><td><strong><%= formatCurrency(payment.amount) %></strong></td></tr><% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% } %>
+</section>

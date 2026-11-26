@@ -1,13 +1,14 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const roles = ['agent', 'manager', 'admin'];
+const roles = ['agent', 'manager', 'admin', 'client'];
 
 const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true },
   role: { type: String, enum: roles, default: 'agent' },
+  client: { type: mongoose.Schema.Types.ObjectId, ref: 'Client' },
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 

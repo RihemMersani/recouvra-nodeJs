@@ -5,5 +5,6 @@ exports.clientSchema = Joi.object({
   email: Joi.string().email().allow('', null),
   phone: Joi.string().allow('', null),
   company: Joi.string().allow('', null),
+  assignedAgent: Joi.string().hex().length(24).allow('', null),
   notes: Joi.string().allow('', null)
 });

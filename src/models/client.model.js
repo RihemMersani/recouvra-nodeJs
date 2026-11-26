@@ -5,6 +5,7 @@ const ClientSchema = new mongoose.Schema({
   email: { type: String },
   phone: { type: String },
   company: { type: String },
+  assignedAgent: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   notes: { type: String },
 }, { timestamps: true });
 
